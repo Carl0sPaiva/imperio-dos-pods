@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Império dos Pods - Catálogo Digital</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #8A2BE2;
+            --primary-neon: #9d4edd;
+            --secondary: #00FF7F;
+            --bg-body: #08090c;
+            --bg-card: #12141c;
+            --bg-input: #1a1d29;
+            --text-main: #f1f5f9;
+            --text-muted: #94a3b8;
+            --border-color: rgba(255, 255, 255, 0.08);
+            --radius-lg: 16px;
+            --radius-md: 12px;
+            --radius-sm: 8px;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Plus Jakarta Sans', sans-serif; -webkit-tap-highlight-color: transparent; }
+        body { background-color: var(--bg-body); color: var(--text-main); padding-bottom: 100px; }
+        
+        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.85); backdrop-filter: blur(8px); display: flex; align-items: center; justify-content: center; z-index: 9999; padding: 20px; }
+        .age-modal { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 30px; text-align: center; max-width: 400px; width: 100%; box-shadow: 0 20px 40px rgba(0,0,0,0.5); }
+        .age-modal i { font-size: 3rem; color: #ff4d4d; margin-bottom: 15px; }
+        .age-modal h2 { font-size: 1.5rem; margin-bottom: 10px; }
+        .age-modal p { color: var(--text-muted); font-size: 0.9rem; margin-bottom: 25px; line-height: 1.5; }
+        .btn-group { display: flex; gap: 10px; }
+        .btn { flex: 1; padding: 12px; border: none; border-radius: var(--radius-md); font-weight: 700; cursor: pointer; transition: 0.2s; }
+        .btn-confirm { background: var(--secondary); color: #000; }
+        .btn-deny { background: #ff4d4d; color: #fff; }
+
+        header { background: linear-gradient(180deg, rgba(138,43,226,0.15) 0%, rgba(8,9,12,0) 100%); padding: 20px; border-bottom: 1px solid var(--border-color); }
+        .store-header { max-width: 600px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; }
+        .store-brand { display: flex; align-items: center; gap: 15px; }
+        .store-avatar { width: 60px; height: 60px; border-radius: 50%; background: var(--primary); display: flex; align-items: center; justify-content: center; font-size: 1.6rem; border: 2px solid var(--secondary); }
+        .store-info h1 { font-size: 1.2rem; font-weight: 800; display: flex; align-items: center; gap: 6px; }
+        .store-status { font-size: 0.75rem; color: var(--secondary); display: flex; align-items: center; gap: 5px; margin-top: 4px; }
+        .status-dot { width: 8px; height: 8px; background: var(--secondary); border-radius: 50%; box-shadow: 0 0 8px var(--secondary); }
+
+        .container { max-width: 600px; margin: 0 auto; padding: 0 15px; }
+        .search-box { margin: 15px 0; position: relative; }
+        .search-box input { width: 100%; background: var(--bg-card); border: 1px solid var(--border-color); padding: 14px 15px 14px 45px; border-radius: var(--radius-md); color: var(--text-main); font-size: 0.95rem; }
+        .search-box i { position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: var(--text-muted); }
+
+        .categories-nav { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 10px; margin-bottom: 20px; scrollbar-width: none; }
+        .categories-nav::-webkit-scrollbar { display: none; }
+        .cat-btn { padding: 8px 16px; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 20px; color: var(--text-muted); font-size: 0.85rem; font-weight: 600; white-space: nowrap; cursor: pointer; }
+        .cat-btn.active { background: var(--primary); color: #fff; border-color: var(--primary-neon); }
+
+        .products-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .product-card { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-lg); overflow: hidden; display: flex; flex-direction: column; position: relative; }
+        .product-card.out { opacity: 0.5; }
+        .product-badge { position: absolute; top: 8px; left: 8px; background: var(--primary); color: #fff; font-size: 0.7rem; font-weight: 700; padding: 3px 8px; border-radius: 4px; z-index: 2; }
+        .product-badge.out-badge { background: #ff4d4d; left: auto; right: 8px; }
+        .product-img { width: 100%; height: 140px; object-fit: cover; background: #1a1a1a; }
+        .product-details { padding: 12px; display: flex; flex-direction: column; flex-grow: 1; }
+        .product-title { font-size: 0.9rem; font-weight: 700; margin-bottom: 4px; line-height: 1.3; }
+        .product-desc { font-size: 0.75rem; color: var(--text-muted); margin-bottom: 10px; line-height: 1.3; height: 32px; overflow: hidden; }
+        .product-bottom { margin-top: auto; display: flex; align-items: center; justify-content: space-between; }
+        .price-box { display: flex; flex-direction: column; }
+        .old-price { font-size: 0.75rem; color: var(--text-muted); text-decoration: line-through; }
+        .current-price { font-size: 1rem; font-weight: 800; color: var(--secondary); }
+        .add-btn { background: var(--primary); color: #fff; border: none; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+        .add-btn:disabled { background: #334155; cursor: not-allowed; }
+
+        .cart-bar { position: fixed; bottom: 0; left: 0; right: 0; background: rgba(18, 20, 28, 0.95); backdrop-filter: blur(10px); border-top: 1px solid var(--border-color); padding: 12px 20px; z-index: 1000; }
+        .cart-bar-content { max-width: 600px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; }
+        .cart-info { display: flex; align-items: center; gap: 12px; }
+        .cart-icon-wrapper { position: relative; font-size: 1.4rem; color: var(--primary-neon); }
+        .cart-count { position: absolute; top: -8px; right: -8px; background: var(--secondary); color: #000; font-size: 0.7rem; font-weight: 800; border-radius: 50%; width: 18px; height: 18px; display: flex; align-items: center; justify-content: center; }
+        .cart-total-val { font-size: 1.1rem; font-weight: 800; }
+
+        .drawer-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); backdrop-filter: blur(4px); z-index: 2000; display: none; }
+        .drawer { position: fixed; bottom: 0; left: 0; right: 0; background: var(--bg-card); border-radius: 20px 20px 0 0; max-height: 85vh; overflow-y: auto; z-index: 2001; padding: 20px; display: none; flex-direction: column; max-width: 600px; margin: 0 auto; }
+        .drawer.active, .drawer-overlay.active { display: flex; }
+        .drawer-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .form-group { margin-bottom: 12px; }
+        .form-group label { display: block; font-size: 0.8rem; color: var(--text-muted); margin-bottom: 4px; }
+        .form-group input, .form-group select { width: 100%; background: var(--bg-input); border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 10px; color: #fff; }
+        .cart-items-list { margin-bottom: 15px; max-height: 200px; overflow-y: auto; }
+        .cart-item-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--border-color); font-size: 0.85rem; }
+        .qty-btn { background: var(--bg-input); color: #fff; border: 1px solid var(--border-color); border-radius: 4px; padding: 2px 9px; cursor: pointer; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+    <div class="modal-overlay" id="ageModal">
+        <div class="age-modal">
+            <i class="fa-solid fa-triangle-exclamation"></i>
+            <h2>Confirmação de Idade</h2>
+            <p>Este site contém produtos destinados exclusivamente a maiores de 18 anos. Você possui 18 anos ou mais?</p>
+            <div class="btn-group">
+                <button class="btn btn-deny" onclick="denyAge()">Não</button>
+                <button class="btn btn-confirm" onclick="confirmAge()">Sim (+18)</button>
+            </div>
+        </div>
+    </div>
+
+    <header>
+        <div class="store-header">
+            <div class="store-brand">
+                <div class="store-avatar"><i class="fa-solid fa-crown"></i></div>
+                <div class="store-info">
+                    <h1>IMPÉRIO DOS PODS <i class="fa-solid fa-circle-check" style="color: #00FF7F; font-size: 1rem;"></i></h1>
+                    <div class="store-status"><div class="status-dot"></div> Aberto agora • Entrega rápida</div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="container">
+        <div class="search-box">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input type="text" id="searchInput" placeholder="Buscar produto ou sabor..." oninput="filterProducts()">
+        </div>
+
+        <div class="categories-nav" id="categoriesNav"></div>
+        <div class="products-grid" id="productsGrid"></div>
+    </div>
+
+    <div class="cart-bar">
+        <div class="cart-bar-content">
+            <div class="cart-info">
+                <div class="cart-icon-wrapper">
+                    <i class="fa-solid fa-basket-shopping"></i>
+                    <span class="cart-count" id="cartCount">0</span>
+                </div>
+                <div>
+                    <div style="font-size: 0.75rem; color: var(--text-muted);">Total do Pedido</div>
+                    <div class="cart-total-val" id="cartTotal">R$ 0,00</div>
+                </div>
+            </div>
+            <button class="btn btn-confirm" style="width: auto; padding: 10px 20px;" onclick="openCheckout()">Ver Carrinho</button>
+        </div>
+    </div>
+
+    <div class="drawer-overlay" id="drawerOverlay" onclick="closeCheckout()"></div>
+    <div class="drawer" id="checkoutDrawer">
+        <div class="drawer-header">
+            <h3>Finalizar Pedido</h3>
+            <i class="fa-solid fa-xmark" onclick="closeCheckout()" style="cursor: pointer; font-size: 1.2rem;"></i>
+        </div>
+
+        <div class="cart-items-list" id="cartItemsList"></div>
+
+        <form id="checkoutForm" onsubmit="sendWhatsAppOrder(event)">
+            <div class="form-group">
+                <label>Seu Nome Completo *</label>
+                <input type="text" id="custName" required placeholder="Digite seu nome">
+            </div>
+
+            <div class="form-group">
+                <label>Tipo de Entrega</label>
+                <select id="deliveryType" onchange="toggleDeliveryUI()">
+                    <option value="delivery">Delivery (+ R$ 10,00)</option>
+                    <option value="pickup">Retirada no Balcão (Grátis)</option>
+                </select>
+            </div>
+
+            <div class="form-group" id="addressGroup">
+                <label>Endereço Completo e Bairro *</label>
+                <input type="text" id="custAddress" required placeholder="Rua, Número, Bairro">
+            </div>
+
+            <div class="form-group">
+                <label>Forma de Pagamento</label>
+                <select id="payMethod">
+                    <option value="Pix">Pix (Chave enviada no WhatsApp)</option>
+                    <option value="Cartão de Crédito/Débito">Cartão de Crédito/Débito na Entrega</option>
+                    <option value="Dinheiro">Dinheiro</option>
+                </select>
+            </div>
+
+            <button type="submit" class="btn btn-confirm" style="width: 100%; margin-top: 10px;">
+                <i class="fa-brands fa-whatsapp"></i> Enviar Pedido via WhatsApp
+            </button>
+        </form>
+    </div>
+
+    <script>
+        let products = [];
+        let categories = [{ id: 'all', name: 'Todos' }];
+        let storeWhatsapp = '5563999999999';
+        let cart = JSON.parse(localStorage.getItem('imperio_pods_cart') || '[]');
+        let currentCategory = 'all';
+
+        function escapeHTML(str) {
+            if (!str) return '';
+            return String(str).replace(/[&<>"']/g, match => ({
+                '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+            }[match]));
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            checkAge();
+            updateCart();
+            fetchCatalog();
+        });
+
+        function checkAge() {
+            if (!localStorage.getItem('imperio_pods_age_confirmed')) {
+                document.getElementById('ageModal').style.display = 'flex';
+            } else {
+                document.getElementById('ageModal').style.display = 'none';
+            }
+        }
+
+        function confirmAge() {
+            localStorage.setItem('imperio_pods_age_confirmed', 'true');
+            document.getElementById('ageModal').style.display = 'none';
+        }
+
+        function denyAge() {
+            alert("Acesso negado. Este site é restrito a maiores de 18 anos.");
+            window.location.href = "https://www.google.com";
+        }
+
+        async function fetchCatalog() {
+            try {
+                const response = await fetch('api.php');
+                if (!response.ok) throw new Error('Erro na requisição');
+                const data = await response.json();
+
+                storeWhatsapp = data.whatsapp || storeWhatsapp;
+                categories = [{ id: 'all', name: 'Todos' }, ...(data.categories || [])];
+                products = data.products || [];
+
+                renderCategories();
+                renderProducts();
+            } catch (err) {
+                console.error(err);
+                document.getElementById('productsGrid').innerHTML = '<p style="grid-column: 1/-1; color: #ff4d4d; text-align: center;">Erro ao carregar os produtos do banco de dados.</p>';
+            }
+        }
+
+        function renderCategories() {
+            const nav = document.getElementById('categoriesNav');
+            nav.innerHTML = categories.map(c => `
+                <button class="cat-btn ${c.id === currentCategory ? 'active' : ''}" onclick="setCategory('${escapeHTML(c.id)}')">${escapeHTML(c.name)}</button>
+            `).join('');
+        }
+
+        function setCategory(id) {
+            currentCategory = id;
+            renderCategories();
+            renderProducts();
+        }
+
+        function renderProducts() {
+            const grid = document.getElementById('productsGrid');
+            const search = document.getElementById('searchInput').value.toLowerCase();
+
+            const filtered = products.filter(p => {
+                const matchCat = currentCategory === 'all' || p.category === currentCategory;
+                const matchSearch = p.name.toLowerCase().includes(search) || 
+                                    p.desc.toLowerCase().includes(search) ||
+                                    (p.flavors && p.flavors.some(f => f.toLowerCase().includes(search)));
+                return matchCat && matchSearch;
+            });
+
+            if (filtered.length === 0) {
+                grid.innerHTML = '<p style="grid-column: 1/-1; text-align: center; color: var(--text-muted);">Nenhum produto encontrado.</p>';
+                return;
+            }
+
+            grid.innerHTML = filtered.map(p => `
+                <div class="product-card ${p.outOfStock ? 'out' : ''}">
+                    ${p.badge ? `<span class="product-badge">${escapeHTML(p.badge)}</span>` : ''}
+                    ${p.outOfStock ? `<span class="product-badge out-badge">Esgotado</span>` : ''}
+                    <img src="${escapeHTML(p.image)}" class="product-img" alt="${escapeHTML(p.name)}">
+                    <div class="product-details">
+                        <div class="product-title">${escapeHTML(p.name)}</div>
+                        <div class="product-desc">${escapeHTML(p.desc)}</div>
+                        
+                        ${p.flavors && p.flavors.length > 0 ? `
+                            <select id="flavor-${p.id}" ${p.outOfStock ? 'disabled' : ''} style="width:100%; background:var(--bg-input); border:1px solid var(--border-color); color:#fff; border-radius:4px; padding:4px; font-size:0.75rem; margin-bottom:8px;">
+                                ${p.flavors.map(f => `<option value="${escapeHTML(f)}">${escapeHTML(f)}</option>`).join('')}
+                            </select>
+                        ` : ''}
+
+                        <div class="product-bottom">
+                            <div class="price-box">
+                                ${p.oldPrice ? `<span class="old-price">R$ ${p.oldPrice.toFixed(2).replace('.', ',')}</span>` : ''}
+                                <span class="current-price">R$ ${p.price.toFixed(2).replace('.', ',')}</span>
+                            </div>
+                            <button class="add-btn" ${p.outOfStock ? 'disabled' : ''} onclick="addToCart(${p.id})"><i class="fa-solid fa-plus"></i></button>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function filterProducts() {
+            renderProducts();
+        }
+
+        function addToCart(productId) {
+            const prod = products.find(p => p.id === productId);
+            if (!prod || prod.outOfStock) return;
+
+            let selectedFlavor = null;
+            const flavorSelect = document.getElementById(`flavor-${productId}`);
+            if (flavorSelect) selectedFlavor = flavorSelect.value;
+
+            const existingIndex = cart.findIndex(item => item.id === productId && item.flavor === selectedFlavor);
+
+            if (existingIndex > -1) {
+                cart[existingIndex].qty++;
+            } else {
+                cart.push({
+                    id: prod.id,
+                    name: prod.name,
+                    price: prod.price,
+                    flavor: selectedFlavor,
+                    qty: 1
+                });
+            }
+            updateCart();
+        }
+
+        function updateCart() {
+            localStorage.setItem('imperio_pods_cart', JSON.stringify(cart));
+            const count = cart.reduce((acc, item) => acc + item.qty, 0);
+            const subtotal = cart.reduce((acc, item) => acc + (item.price * item.qty), 0);
+            
+            document.getElementById('cartCount').innerText = count;
+            document.getElementById('cartTotal').innerText = `R$ ${subtotal.toFixed(2).replace('.', ',')}`;
+        }
+
+        function openCheckout() {
+            if (cart.length === 0) {
+                alert("Seu carrinho está vazio!");
+                return;
+            }
+
+            const list = document.getElementById('cartItemsList');
+            list.innerHTML = cart.map((item, index) => `
+                <div class="cart-item-row">
+                    <div>
+                        <strong>${escapeHTML(item.name)}</strong>
+                        ${item.flavor ? `<br><small style="color:var(--text-muted);">Sabor/Opção: ${escapeHTML(item.flavor)}</small>` : ''}
+                        <br><span style="color:var(--secondary);">R$ ${item.price.toFixed(2).replace('.', ',')} x ${item.qty}</span>
+                    </div>
+                    <div>
+                        <button type="button" class="qty-btn" onclick="changeQty(${index}, -1)">-</button>
+                        <button type="button" class="qty-btn" onclick="changeQty(${index}, 1)">+</button>
+                    </div>
+                </div>
+            `).join('');
+
+            document.getElementById('drawerOverlay').classList.add('active');
+            document.getElementById('checkoutDrawer').classList.add('active');
+        }
+
+        function changeQty(index, delta) {
+            cart[index].qty += delta;
+            if (cart[index].qty <= 0) cart.splice(index, 1);
+            updateCart();
+            if (cart.length === 0) closeCheckout();
+            else openCheckout();
+        }
+
+        function closeCheckout() {
+            document.getElementById('drawerOverlay').classList.remove('active');
+            document.getElementById('checkoutDrawer').classList.remove('active');
+        }
+
+        function toggleDeliveryUI() {
+            const type = document.getElementById('deliveryType').value;
+            const addrGroup = document.getElementById('addressGroup');
+            const addrInput = document.getElementById('custAddress');
+
+            if (type === 'delivery') {
+                addrGroup.style.display = 'block';
+                addrInput.setAttribute('required', 'required');
+            } else {
+                addrGroup.style.display = 'none';
+                addrInput.removeAttribute('required');
+            }
+        }
+
+        function sendWhatsAppOrder(e) {
+            e.preventDefault();
+
+            const name = document.getElementById('custName').value.trim();
+            const delType = document.getElementById('deliveryType').value;
+            const address = document.getElementById('custAddress').value.trim();
+            const payMethod = document.getElementById('payMethod').value;
+
+            const deliveryFee = delType === 'delivery' ? 10.00 : 0.00;
+            const subtotal = cart.reduce((acc, item) => acc + (item.price * item.qty), 0);
+            const total = subtotal + deliveryFee;
+
+            let text = `*--- NOVO PEDIDO: IMPÉRIO DOS PODS ---*\n\n`;
+            text += `*Cliente:* ${name}\n`;
+            text += `*Entrega:* ${delType === 'delivery' ? 'Delivery' : 'Retirada no Balcão'}\n`;
+            if (delType === 'delivery') text += `*Endereço:* ${address}\n`;
+            text += `*Pagamento:* ${payMethod}\n\n`;
+            text += `*ITENS:* \n`;
+
+            cart.forEach((item, i) => {
+                text += `${i+1}. ${item.name}\n`;
+                if (item.flavor) text += `   • Sabor: ${item.flavor}\n`;
+                text += `   • Qtd: ${item.qty}x | R$ ${(item.price * item.qty).toFixed(2)}\n`;
+            });
+
+            text += `\n------------------------------\n`;
+            text += `*Subtotal:* R$ ${subtotal.toFixed(2)}\n`;
+            text += `*Taxa Entrega:* R$ ${deliveryFee.toFixed(2)}\n`;
+            text += `*TOTAL:* R$ ${total.toFixed(2)}\n`;
+
+            const encoded = encodeURIComponent(text);
+            window.open(`https://api.whatsapp.com/send?phone=${storeWhatsapp}&text=${encoded}`, '_blank');
+        }
+    </script>
+</body>
+</html>
